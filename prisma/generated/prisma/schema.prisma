@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  WORKER
+  EMPLOYER
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  name         String?
+  role         Role          @default(WORKER)
+  password     String
+  createdAt    DateTime      @default(now())
+  vacancies    Vacancy[]
+  resumes      Resume[]
+  applications Application[]
+  favorites    Favorite[]
+}
+
+model Vacancy {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  salary       Int
+  location     String
+  companyId    Int
+  company      Company       @relation(fields: [companyId], references: [id])
+  category     String
+  type         String
+  experience   Int
+  education    String
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[]
+  favorites    Favorite[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Resume {
+  id           Int           @id @default(autoincrement())
+  title        String
+  experience   String
+  education    String
+  skills       String
+  about        String?
+  salary       Int?
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[]
+  favorites    Favorite[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Application {
+  id        Int      @id @default(autoincrement())
+  status    String   @default("new") // new, viewed, invited, rejected
+  comment   String?
+  resumeId  Int
+  resume    Resume   @relation(fields: [resumeId], references: [id])
+  vacancyId Int
+  vacancy   Vacancy  @relation(fields: [vacancyId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  logo        String?
+  website     String?
+  size        String?
+  industry    String?
+  vacancies   Vacancy[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  resumeId  Int?
+  resume    Resume?  @relation(fields: [resumeId], references: [id])
+  vacancyId Int?
+  vacancy   Vacancy? @relation(fields: [vacancyId], references: [id])
+  createdAt DateTime @default(now())
+}
