@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server'
-import { companyService } from '@/core/database/tables/company/company'
-import { verify } from 'jsonwebtoken'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/authOptions'
+import prisma from '@/lib/prisma'
 
 // GET /api/company - получение всех компаний
-export async function GET(request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url)
-    const name = searchParams.get('name')
-
-    let companies
-    if (name) {
-      companies = await companyService.searchCompaniesByName(name)
-    } else {
-      companies = await companyService.getAllCompanies()
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
+
+    const companies = await prisma.company.findMany({
+      where: {
+        userId: session.user.id
+      }
+    })
 
     return NextResponse.json(companies)
   } catch (error) {
+    console.error('Error fetching companies:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Ошибка при получении списка компаний' },
       { status: 500 }
     )
   }
@@ -27,54 +30,43 @@ export async function GET(request) {
 // POST /api/company - создание новой компании
 export async function POST(request) {
   try {
-    const token = request.cookies.get('token')?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
-    
-    // Проверяем, что пользователь является работодателем
-    if (decoded.role !== 'EMPLOYER') {
+    if (session.user.role !== 'EMPLOYER') {
       return NextResponse.json(
-        { error: 'Only employers can create companies' },
+        { error: 'Только работодатели могут создавать компании' },
         { status: 403 }
       )
     }
 
     const data = await request.json()
-    
-    // Проверяем обязательные поля
-    const requiredFields = ['name', 'description']
-    const missingFields = requiredFields.filter(field => !data[field])
-    
-    if (missingFields.length > 0) {
+    const { name, description, website, location } = data
+
+    if (!name) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: 'Название компании обязательно' },
         { status: 400 }
       )
     }
 
-    // Добавляем userId из токена
-    const company = await companyService.upsertCompany(null, {
-      ...data,
-      userId: decoded.userId
+    const company = await prisma.company.create({
+      data: {
+        name,
+        description,
+        website,
+        location,
+        userId: session.user.id
+      }
     })
 
     return NextResponse.json(company)
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
+    console.error('Error creating company:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Ошибка при создании компании' },
       { status: 500 }
     )
   }

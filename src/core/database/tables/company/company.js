@@ -1,31 +1,55 @@
-import prisma from '../../client/prisma'
+import prisma from '@/client/prisma'
 
 export const companyService = {
+  // Получение всех компаний
+  async getAllCompanies() {
+    return prisma.company.findMany({
+      include: {
+        user: true,
+        vacancies: true
+      }
+    })
+  },
+
   // Получение компании по ID
   async getCompanyById(id) {
     return prisma.company.findUnique({
       where: { id },
       include: {
+        user: true,
         vacancies: true
       }
     })
   },
 
-  // Получение всех компаний
-  async getAllCompanies() {
+  // Получение компаний пользователя
+  async getCompaniesByUser(userId) {
     return prisma.company.findMany({
+      where: { userId },
       include: {
         vacancies: true
       }
     })
   },
 
-  // Создание или обновление компании
-  async upsertCompany(id, data) {
-    return prisma.company.upsert({
+  // Создание компании
+  async createCompany(data) {
+    return prisma.company.create({
+      data,
+      include: {
+        user: true
+      }
+    })
+  },
+
+  // Обновление компании
+  async updateCompany(id, data) {
+    return prisma.company.update({
       where: { id },
-      update: data,
-      create: data
+      data,
+      include: {
+        user: true
+      }
     })
   },
 

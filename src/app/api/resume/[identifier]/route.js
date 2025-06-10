@@ -36,7 +36,7 @@ export async function PUT(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
     const data = await request.json()
 
@@ -86,7 +86,7 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
 
     // Получаем резюме для проверки владельца

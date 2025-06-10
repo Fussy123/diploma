@@ -14,7 +14,7 @@ export async function GET(request) {
     }
 
     try {
-      const decoded = verify(token, process.env.JWT_SECRET)
+      const decoded = verify(token, process.env.NEXTAUTH_SECRET)
       const user = await userService.getUserById(decoded.userId)
 
       if (!user) {

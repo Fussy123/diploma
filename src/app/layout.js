@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export default function RootLayout({ children }) {
   return (
     <html lang="ru" className={`${geist.className} ${geistMono.className}`}>
-      <body className="bg-white dark:bg-gray-900">
+      <body className="">
         <AuthProvider>
           <Header />
           <main className="min-h-screen pt-16">

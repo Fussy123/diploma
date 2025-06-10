@@ -14,7 +14,7 @@ export async function GET(request) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { searchParams } = new URL(request.url)
     const vacancyId = searchParams.get('vacancyId')
 
@@ -72,7 +72,7 @@ export async function POST(request) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     
     // Проверяем, что пользователь не является работодателем
     if (decoded.role === 'EMPLOYER') {

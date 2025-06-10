@@ -14,7 +14,7 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
 
     // Получаем избранное для проверки владельца

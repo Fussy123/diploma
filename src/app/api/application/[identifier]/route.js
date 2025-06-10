@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
     const application = await applicationService.getApplicationById(identifier)
 
@@ -63,7 +63,7 @@ export async function PUT(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
     const { status } = await request.json()
 
@@ -125,7 +125,7 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { identifier } = params
 
     // Получаем заявку для проверки прав

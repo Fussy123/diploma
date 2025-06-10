@@ -14,7 +14,7 @@ export async function GET(request) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const favorites = await favoriteService.getUserFavorites(decoded.userId)
 
     return NextResponse.json(favorites)
@@ -44,7 +44,7 @@ export async function POST(request) {
       )
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET)
+    const decoded = verify(token, process.env.NEXTAUTH_SECRET)
     const { vacancyId, resumeId } = await request.json()
 
     // Проверяем, что передан хотя бы один ID

@@ -1,83 +1,68 @@
 import { NextResponse } from 'next/server'
 import { vacancyService } from '@/core/database/tables/vacancy/vacancy'
 import { verify } from 'jsonwebtoken'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/authOptions'
 
 // GET /api/vacancy - получение всех вакансий
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const companyId = searchParams.get('companyId')
-    const userId = searchParams.get('userId')
+    const { searchParams } = new URL(request.url);
+    const companyId = searchParams.get('companyId');
+    const userId = searchParams.get('userId');
 
-    let vacancies
+    let vacancies;
     if (companyId) {
-      vacancies = await vacancyService.getVacanciesByCompany(companyId)
+      vacancies = await vacancyService.getVacanciesByCompany(companyId);
     } else if (userId) {
-      vacancies = await vacancyService.getVacanciesByUser(userId)
+      vacancies = await vacancyService.getVacanciesByUser(userId);
     } else {
-      vacancies = await vacancyService.getAllVacancies()
+      vacancies = await vacancyService.getAllVacancies();
     }
 
-    return NextResponse.json(vacancies)
+    return NextResponse.json(vacancies);
   } catch (error) {
+    console.error('Error fetching vacancies:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Ошибка при получении списка вакансий' },
       { status: 500 }
-    )
+    );
   }
 }
 
 // POST /api/vacancy - создание новой вакансии
 export async function POST(request) {
   try {
-    const token = request.cookies.get('token')?.value
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verify(token, process.env.JWT_SECRET)
-    
-    // Проверяем, что пользователь является работодателем
-    if (decoded.role !== 'EMPLOYER') {
-      return NextResponse.json(
-        { error: 'Only employers can create vacancies' },
-        { status: 403 }
-      )
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
     const data = await request.json()
-    
-    // Проверяем обязательные поля
-    const requiredFields = ['title', 'description', 'companyId']
-    const missingFields = requiredFields.filter(field => !data[field])
-    
-    if (missingFields.length > 0) {
+    const { title, description, salary, location, requirements, companyId } = data
+
+    if (!title || !description || !companyId) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missingFields.join(', ')}` },
+        { error: 'Название, описание и компания обязательны' },
         { status: 400 }
       )
     }
 
-    // Добавляем userId из токена
-    const vacancy = await vacancyService.upsertVacancy(null, {
-      ...data,
-      userId: decoded.userId
+    const vacancy = await vacancyService.createVacancy({
+      title,
+      description,
+      salary: salary ? parseInt(salary) : null,
+      location,
+      requirements,
+      companyId,
+      userId: session.user.id
     })
 
     return NextResponse.json(vacancy)
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
+    console.error('Error creating vacancy:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Ошибка при создании вакансии' },
       { status: 500 }
     )
   }

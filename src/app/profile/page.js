@@ -17,14 +17,22 @@ export default function ProfilePage() {
   });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
     } else if (status === "authenticated") {
       fetchProfile();
+      if (session?.user?.role === 'WORKER') {
+        fetch('/api/resume')
+          .then(res => res.json())
+          .then(data => setResumes(data))
+          .finally(() => setLoading(false));
+      }
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
   const fetchProfile = async () => {
     try {
@@ -86,6 +94,12 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteResume = async (id) => {
+    if (!confirm('Удалить резюме?')) return;
+    await fetch(`/api/resume/${id}`, { method: 'DELETE' });
+    setResumes(resumes.filter(r => r.id !== id));
+  };
+
   if (status === "loading") {
     return (
       <div className="flex justify-center items-center min-h-[200px] text-lg text-gray-600">
@@ -135,6 +149,7 @@ export default function ProfilePage() {
             id="email"
             name="email"
             value={formData.email}
+            readOnly
             className="w-full px-4 py-2 border text-black border-gray-300 rounded-md bg-gray-50"
           />
         </div>
@@ -211,6 +226,40 @@ export default function ProfilePage() {
           Сохранить изменения
         </button>
       </form>
+
+      {session?.user?.role === 'WORKER' && (
+        <div className="mb-8 mt-5">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-4"
+            onClick={() => router.push('/resume/create')}
+          >
+            Создать резюме
+          </button>
+          <h2 className="text-xl font-semibold mb-2">Мои резюме</h2>
+          {loading ? (
+            <div>Загрузка...</div>
+          ) : resumes.length === 0 ? (
+            <div>У вас нет резюме</div>
+          ) : (
+            <ul className="space-y-2">
+              {resumes.map(r => (
+                <li key={r.id} className="border p-4 rounded flex justify-between items-center">
+                  <div>
+                    <div className="font-bold">{r.title}</div>
+                    <div className="text-gray-600 text-sm">{r.experience}</div>
+                  </div>
+                  <button
+                    className="text-red-600 hover:underline"
+                    onClick={() => handleDeleteResume(r.id)}
+                  >
+                    Удалить
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 } 

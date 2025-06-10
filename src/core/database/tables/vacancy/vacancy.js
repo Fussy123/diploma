@@ -1,4 +1,4 @@
-import prisma from '../../client/prisma'
+import prisma from '@/lib/prisma'
 
 export const vacancyService = {
   // Получение вакансии по ID
@@ -22,22 +22,6 @@ export const vacancyService = {
     })
   },
 
-  // Создание или обновление вакансии
-  async upsertVacancy(id, data) {
-    return prisma.vacancy.upsert({
-      where: { id },
-      update: data,
-      create: data
-    })
-  },
-  
-  // Удаление вакансии
-  async deleteVacancy(id) {
-    return prisma.vacancy.delete({
-      where: { id }
-    })
-  },
-
   // Получение вакансий по компании
   async getVacanciesByCompany(companyId) {
     return prisma.vacancy.findMany({
@@ -57,6 +41,36 @@ export const vacancyService = {
         company: true,
         user: true
       }
+    })
+  },
+
+  // Создание вакансии
+  async createVacancy(data) {
+    return prisma.vacancy.create({
+      data,
+      include: {
+        company: true,
+        user: true
+      }
+    })
+  },
+
+  // Обновление вакансии
+  async updateVacancy(id, data) {
+    return prisma.vacancy.update({
+      where: { id },
+      data,
+      include: {
+        company: true,
+        user: true
+      }
+    })
+  },
+
+  // Удаление вакансии
+  async deleteVacancy(id) {
+    return prisma.vacancy.delete({
+      where: { id }
     })
   }
 } 
