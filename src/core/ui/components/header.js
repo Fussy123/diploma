@@ -1,69 +1,73 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { useEffect } from 'react';
 
 export default function Header() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
-  const handleAuthClick = () => {
-    if (isAuthenticated) {
-      logout();
-    } else {
-      router.push('/auth/login');
-    }
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.push('/');
   };
 
   return (
-    <header className="bg-white shadow-md">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex space-x-8">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between h-16">
+          <div className="flex">
             <Link 
-              href="/" 
-              className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              href="/main" 
+              className="flex items-center px-4 py-2 text-gray-700 hover:text-gray-900"
             >
               Главная
             </Link>
-            
-            {user?.role === 'worker' && (
-              <Link 
-                href="/jobs" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              >
-                Найти работу
-              </Link>
-            )}
-            
-            {(user?.role === 'admin' || user?.role === 'employer') && (
-              <Link 
-                href="/post-job" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              >
-                Предложить работу
-              </Link>
-            )}
           </div>
-
+          
           <div className="flex items-center space-x-4">
-            <button 
-              onClick={handleAuthClick}
-              className="bg-black text-white px-6 py-2 rounded-[15px] font-medium hover:bg-gray-800 transition-colors"
-            >
-              {isAuthenticated ? 'Выйти' : 'Войти'}
-            </button>
-            
-            <Link 
-              href="/create-resume" 
-              className="bg-black text-white px-6 py-2 rounded-[15px] font-medium hover:bg-gray-800 transition-colors"
-            >
-              Создать резюме
-            </Link>
+            {status === 'authenticated' ? (
+              <>
+                <Link 
+                  href="/create-resume" 
+                  className="px-6 py-2 bg-black text-white rounded-[15%] hover:bg-gray-800 transition-colors"
+                >
+                  Создать резюме
+                </Link>
+                <Link 
+                  href="/profile" 
+                  className="px-6 py-2 bg-black text-white rounded-[15%] hover:bg-gray-800 transition-colors"
+                >
+                  Личный кабинет
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-red-600 hover:text-red-800"
+                >
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/create-resume" 
+                  className="px-6 py-2 bg-black text-white rounded-[15%] hover:bg-gray-800 transition-colors"
+                >
+                  Создать резюме
+                </Link>
+                <Link 
+                  href="/" 
+                  className="px-6 py-2 bg-black text-white rounded-[15%] hover:bg-gray-800 transition-colors"
+                >
+                  Войти
+                </Link>
+              </>
+            )}
           </div>
         </div>
-      </nav>
+      </div>
     </header>
   );
-}
+} 

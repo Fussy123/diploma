@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { userService } from '@/core/database/tables/user/user'
+import bcrypt from 'bcryptjs'
+import prisma from '@/core/database/client/prisma'
 import { sign } from 'jsonwebtoken'
 
 export async function POST(request) {
@@ -13,7 +14,9 @@ export async function POST(request) {
       )
     }
 
-    const user = await userService.getUserByEmail(email)
+    const user = await prisma.user.findUnique({
+      where: { email },
+    })
     
     if (!user) {
       return NextResponse.json(
@@ -22,28 +25,34 @@ export async function POST(request) {
       )
     }
 
-    // TODO: Добавить проверку пароля через bcrypt
-    // const isValidPassword = await bcrypt.compare(password, user.password)
-    // if (!isValidPassword) {
-    //   return NextResponse.json(
-    //     { error: 'Invalid password' },
-    //     { status: 401 }
-    //   )
-    // }
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Invalid password' },
+        { status: 401 }
+      )
+    }
 
     const token = sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.NEXTAUTH_SECRET || 'diploma-project-secret-key-2024-super-secure',
+      { expiresIn: '1d' }
     )
 
     const response = NextResponse.json({
+      message: 'Успешный вход',
+      token,
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
-      },
-      token
+        name: user.name,
+        role: user.role
+      }
     })
 
     // Устанавливаем cookie с токеном
@@ -56,8 +65,9 @@ export async function POST(request) {
 
     return response
   } catch (error) {
+    console.error('Ошибка при входе:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Ошибка при входе в систему' },
       { status: 500 }
     )
   }

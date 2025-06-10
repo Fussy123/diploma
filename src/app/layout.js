@@ -1,8 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/Navigation";
-import Providers from "@/components/Providers";
-import prisma from '@/lib/prisma';
+import Header from "@/core/ui/components/header";
+import AuthProvider from "@/core/providers/session-provider";
 
 const geist = Geist({
   subsets: ['latin', 'cyrillic'],
@@ -17,13 +16,13 @@ const geistMono = Geist_Mono({
 export default function RootLayout({ children }) {
   return (
     <html lang="ru" className={`${geist.className} ${geistMono.className}`}>
-      <body>
-        <Providers>
-          <Navigation />
-          <main className="min-h-screen">
+      <body className="bg-white dark:bg-gray-900">
+        <AuthProvider>
+          <Header />
+          <main className="min-h-screen pt-16">
             {children}
           </main>
-        </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

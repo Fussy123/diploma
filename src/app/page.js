@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
@@ -18,23 +19,52 @@ export default function Home() {
     setError('')
 
     try {
-      const endpoint = isLogin ? '/api/user/auth/sign-in' : '/api/user/auth/sign-up'
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      if (isLogin) {
+        // Используем NextAuth для входа
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        })
 
-      const data = await response.json()
+        if (result?.error) {
+          throw new Error(result.error)
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong')
+        // После успешного входа перенаправляем на главную
+        router.push('/main')
+        router.refresh() // Обновляем состояние страницы
+      } else {
+        // Регистрация
+        const response = await fetch('/api/user/auth/sign-up', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Something went wrong')
+        }
+
+        // После успешной регистрации выполняем вход
+        const signInResult = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        })
+
+        if (signInResult?.error) {
+          throw new Error(signInResult.error)
+        }
+
+        // Перенаправляем на главную
+        router.push('/main')
+        router.refresh() // Обновляем состояние страницы
       }
-
-      // После успешной авторизации/регистрации перенаправляем на главную
-      router.push('/main')
     } catch (err) {
       setError(err.message)
     }
@@ -66,7 +96,7 @@ export default function Home() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
